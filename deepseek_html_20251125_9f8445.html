@@ -1,0 +1,2726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="api-base" content="http://localhost:8081">
+    <title>Mini Mind - AI Parenting Assistant</title>
+    <style>
+        /* ===== VARIABLES & RESET ===== */
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --danger: #e63946;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --gray-light: #adb5bd;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --light: #121212;
+            --dark: #f8f9fa;
+            --gray: #adb5bd;
+            --gray-light: #495057;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: var(--transition);
+        }
+
+        /* ===== LAYOUT ===== */
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* ===== MAIN CONTENT GRID ===== */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            margin-bottom: 20px;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        [data-theme="dark"] .card {
+            background: #1e1e1e;
+            color: var(--dark);
+        }
+
+        .card h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .card h3 {
+            color: var(--secondary);
+            margin: 15px 0 10px 0;
+            font-size: 1.1rem;
+        }
+
+        /* ===== PROGRESS & STATS ===== */
+        .progress-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .progress-card {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .progress-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .progress-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Progress Bars */
+        .progress-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .progress-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-item label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ===== CHAT INTERFACE ===== */
+        .chat-container {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        [data-theme="dark"] .chat-container {
+            background: #1e1e1e;
+        }
+
+        .chat-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: var(--light);
+            color: var(--dark);
+            border-bottom-left-radius: 4px;
+        }
+
+        [data-theme="dark"] .message.ai {
+            background: #2d2d2d;
+        }
+
+        .chat-input-container {
+            padding: 15px 20px;
+            border-top: 1px solid var(--gray-light);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-light);
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+        }
+
+        .send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .send-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        /* ===== TYPING INDICATOR ===== */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--light);
+            border-radius: 18px;
+            align-self: flex-start;
+            margin-bottom: 10px;
+        }
+
+        [data-theme="dark"] .typing-indicator {
+            background: #2d2d2d;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--gray);
+            border-radius: 50%;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typingAnimation {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: white;
+            border: 2px solid var(--primary-light);
+            padding: 15px 10px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            text-align: center;
+            transition: var(--transition);
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .action-btn:hover {
+            background: var(--primary-light);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        [data-theme="dark"] .action-btn {
+            background: #1e1e1e;
+            border-color: var(--primary);
+        }
+
+        /* ===== CHECKLIST ===== */
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* ===== DETAILED CHECKLIST ===== */
+        .detailed-checklist {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .checklist-category {
+            margin-bottom: 15px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .checklist-category-header {
+            background: var(--primary-light);
+            color: white;
+            padding: 12px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .checklist-category-content {
+            background: var(--light);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        [data-theme="dark"] .checklist-category-content {
+            background: #2d2d2d;
+        }
+
+        .checklist-category.active .checklist-category-content {
+            max-height: 500px;
+        }
+
+        .sub-checklist-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sub-checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .sub-checklist-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        .sub-checklist-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .solutions-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f4fd;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary);
+            display: none;
+        }
+
+        [data-theme="dark"] .solutions-panel {
+            background: #1a3a4a;
+        }
+
+        .solutions-panel h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .solutions-list {
+            padding-left: 20px;
+        }
+
+        .solutions-list li {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        /* ===== TIPS ===== */
+        .tips {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tip {
+            padding: 10px 15px;
+            background: var(--light);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            font-size: 0.9rem;
+        }
+
+        [data-theme="dark"] .tip {
+            background: #2d2d2d;
+        }
+
+        /* ===== LOADING SCREEN ===== */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-content {
+            text-align: center;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-steps {
+            margin-top: 20px;
+        }
+
+        .loading-step {
+            margin: 10px 0;
+            opacity: 0.7;
+            transition: var(--transition);
+        }
+
+        .loading-step.active {
+            opacity: 1;
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        /* ===== SERVER STATUS ===== */
+        .server-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .server-status.offline {
+            background: var(--danger);
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .progress-section {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .server-status {
+                top: 10px;
+                right: 10px;
+                font-size: 0.7rem;
+            }
+        }
+
+        /* ===== DARK MODE TOGGLE ===== */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* ===== UTILITY CLASSES ===== */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        .p-20 {
+            padding: 20px;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* ===== CONFETTI ===== */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Mini Mind</h2>
+            <p>Your AI Parenting Assistant</p>
+            <div class="loading-steps">
+                <div class="loading-step" id="step1">Initializing parenting database...</div>
+                <div class="loading-step" id="step2">Loading AI assistant...</div>
+                <div class="loading-step" id="step3">Setting up your profile...</div>
+                <div class="loading-step" id="step4">Almost ready...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Status -->
+    <div class="server-status" id="server-status">Server: Connecting...</div>
+
+    <!-- Dark Mode Toggle -->
+    <button class="theme-toggle" id="theme-toggle">🌙</button>
+
+    <!-- Main App Container -->
+    <div class="app-container hidden" id="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Mini Mind 🧠</h1>
+            <p>Your AI-Powered Parenting Companion</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="main-content">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Progress Section -->
+                <div class="progress-section">
+                    <div class="progress-card">
+                        <div class="progress-number" id="solved-count">0</div>
+                        <div class="progress-label">Problems Solved</div>
+                    </div>
+                    <div class="progress-card">
+                        <div class="progress-number" id="streak-count">0</div>
+                        <div class="progress-label">Day Streak</div>
+                    </div>
+                    <div class="progress-card">
+                        <div class="progress-number" id="progress-percent">0%</div>
+                        <div class="progress-label">Parenting Progress</div>
+                    </div>
+                </div>
+
+                <!-- Chat Interface -->
+                <div class="card">
+                    <h2>Ask Mini Mind 🤖</h2>
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <h3>Parenting Assistant</h3>
+                        </div>
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="message ai">
+                                Hi there! I'm Mini Mind, your AI parenting assistant. I can help with behavior, sleep, eating, screen time, and more. What's on your mind today?
+                            </div>
+                        </div>
+                        <div class="typing-indicator" id="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <span>Mini Mind is thinking...</span>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" class="chat-input" id="chat-input" placeholder="Ask about sleep, behavior, eating...">
+                            <button class="send-btn" id="send-btn">➤</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Checklist -->
+                <div class="card">
+                    <h2>Parenting Challenges Checklist</h2>
+                    <div class="detailed-checklist" id="detailed-checklist">
+                        <!-- Behavior Category -->
+                        <div class="checklist-category active" data-category="behavior">
+                            <div class="checklist-category-header">
+                                <span>🎭 Behavior Issues</span>
+                                <span>▼</span>
+                            </div>
+                            <div class="checklist-category-content">
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="behavior-1" data-issue="tantrums">
+                                    <label for="behavior-1">Tantrums & Meltdowns</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="behavior-2" data-issue="defiance">
+                                    <label for="behavior-2">Defiance & Not Listening</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="behavior-3" data-issue="sharing">
+                                    <label for="behavior-3">Sharing Difficulties</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="behavior-4" data-issue="hitting">
+                                    <label for="behavior-4">Hitting & Aggression</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="behavior-5" data-issue="whining">
+                                    <label for="behavior-5">Whining & Complaining</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Eating Category -->
+                        <div class="checklist-category" data-category="eating">
+                            <div class="checklist-category-header">
+                                <span>🍽️ Eating Problems</span>
+                                <span>▼</span>
+                            </div>
+                            <div class="checklist-category-content">
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="eating-1" data-issue="picky-eating">
+                                    <label for="eating-1">Picky Eating</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="eating-2" data-issue="food-refusal">
+                                    <label for="eating-2">Refusing Food</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="eating-3" data-issue="mealtime-struggles">
+                                    <label for="eating-3">Mealtime Struggles</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="eating-4" data-issue="overeating">
+                                    <label for="eating-4">Overeating</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sleeping Category -->
+                        <div class="checklist-category" data-category="sleeping">
+                            <div class="checklist-category-header">
+                                <span>💤 Sleep Issues</span>
+                                <span>▼</span>
+                            </div>
+                            <div class="checklist-category-content">
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="sleep-1" data-issue="bedtime-resistance">
+                                    <label for="sleep-1">Bedtime Resistance</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="sleep-2" data-issue="night-wakings">
+                                    <label for="sleep-2">Night Wakings</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="sleep-3" data-issue="early-rising">
+                                    <label for="sleep-3">Early Rising</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="sleep-4" data-issue="nap-struggles">
+                                    <label for="sleep-4">Nap Struggles</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Screen Time Category -->
+                        <div class="checklist-category" data-category="screen-time">
+                            <div class="checklist-category-header">
+                                <span>📱 Screen Time</span>
+                                <span>▼</span>
+                            </div>
+                            <div class="checklist-category-content">
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="screen-1" data-issue="excessive-use">
+                                    <label for="screen-1">Excessive Use</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="screen-2" data-issue="tantrums-removal">
+                                    <label for="screen-2">Tantrums When Removed</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="screen-3" data-issue="content-concerns">
+                                    <label for="screen-3">Content Concerns</label>
+                                </div>
+                                <div class="sub-checklist-item">
+                                    <input type="checkbox" id="screen-4" data-issue="bedtime-disruption">
+                                    <label for="screen-4">Bedtime Disruption</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solutions Panel -->
+                    <div class="solutions-panel" id="solutions-panel">
+                        <h4>Recommended Solutions:</h4>
+                        <ul class="solutions-list" id="solutions-list">
+                            <!-- Solutions will be dynamically inserted here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Sidebar -->
+            <div class="sidebar">
+                <!-- Daily Checklist -->
+                <div class="card">
+                    <h2>Today's Checklist ✅</h2>
+                    <div class="checklist">
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check1">
+                            <label for="check1">Consistent meal times</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check2">
+                            <label for="check2">Screen time limit</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check3">
+                            <label for="check3">Outdoor play</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check4">
+                            <label for="check4">Bedtime routine</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check5">
+                            <label for="check5">Reading time</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Tracking -->
+                <div class="card">
+                    <h2>Your Progress 📊</h2>
+                    <div class="progress-bars">
+                        <div class="progress-item">
+                            <label>Sleep Routine</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill" data-progress="65" style="width: 65%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <label>Eating Habits</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill" data-progress="45" style="width: 45%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <label>Behavior Management</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill" data-progress="75" style="width: 75%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <label>Screen Time Control</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill" data-progress="55" style="width: 55%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Tips -->
+                <div class="card">
+                    <h2>Quick Tips 💡</h2>
+                    <div class="tips">
+                        <div class="tip">Use countdowns for transitions</div>
+                        <div class="tip">Offer choices to reduce power struggles</div>
+                        <div class="tip">Keep routines predictable</div>
+                        <div class="tip">Praise effort, not just results</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        // ===============================
+        // CHECKLIST SOLUTIONS DATABASE
+        // ===============================
+        const CHECKLIST_SOLUTIONS = {
+            // Behavior Issues
+            "tantrums": [
+                "Stay calm and don't give in to demands - this teaches that tantrums work",
+                "Use distraction with a favorite toy or activity",
+                "Acknowledge feelings: 'I see you're upset because...'",
+                "Offer a safe space to calm down without punishment",
+                "Teach simple calming techniques like deep breathing",
+                "Prevent tantrums by avoiding triggers when possible"
+            ],
+            "defiance": [
+                "Offer limited choices to give a sense of control",
+                "Use 'when...then' statements: 'When you put on shoes, then we can go to the park'",
+                "Stay consistent with rules and consequences",
+                "Praise compliance immediately",
+                "Use visual schedules for routines"
+            ],
+            "sharing": [
+                "Practice turn-taking with timers",
+                "Model sharing behavior yourself",
+                "Praise sharing when it happens naturally",
+                "Prepare for playdates by discussing sharing expectations",
+                "Have duplicate toys available for young children"
+            ],
+            "hitting": [
+                "Immediately stop the behavior calmly but firmly",
+                "Teach alternative ways to express anger (words, stomping feet)",
+                "Use time-ins instead of time-outs - stay with child to help regulate",
+                "Identify triggers and prevent them when possible",
+                "Praise gentle touch and kind behavior"
+            ],
+            "whining": [
+                "Don't respond to whining - wait for normal voice",
+                "Teach 'asking nicely' with examples",
+                "Acknowledge feelings but set boundary: 'I hear you're frustrated, but use your big voice'",
+                "Praise immediately when they use normal tone",
+                "Stay consistent - don't occasionally give in to whining"
+            ],
+            
+            // Eating Problems
+            "picky-eating": [
+                "Offer one familiar food with new foods",
+                "Don't force eating - it creates negative associations",
+                "Involve children in meal preparation",
+                "Make food fun with shapes and colors",
+                "Keep offering rejected foods - it can take 10-15 exposures"
+            ],
+            "food-refusal": [
+                "Stay calm and avoid power struggles",
+                "Offer small portions to avoid overwhelm",
+                "Establish regular meal and snack times",
+                "Don't become a short-order cook",
+                "Model enjoying a variety of foods"
+            ],
+            "mealtime-struggles": [
+                "Create consistent mealtime routines",
+                "Eliminate distractions (TV, tablets)",
+                "Keep meals positive and social",
+                "Set clear expectations for mealtime behavior",
+                "Use timer for reasonable mealtime length"
+            ],
+            "overeating": [
+                "Serve appropriate portion sizes",
+                "Don't use food as reward or punishment",
+                "Encourage listening to hunger/fullness cues",
+                "Offer healthy snacks at regular intervals",
+                "Model balanced eating habits"
+            ],
+            
+            // Sleep Issues
+            "bedtime-resistance": [
+                "Establish consistent bedtime routine (bath, books, bed)",
+                "Give warnings before transitions (5-minute, 2-minute)",
+                "Use visual schedule for bedtime steps",
+                "Keep bedtime predictable - same time every night",
+                "Make bedroom environment calming and comfortable"
+            ],
+            "night-wakings": [
+                "Respond consistently to night wakings",
+                "Use quick, boring check-ins without turning on lights",
+                "Teach self-soothing skills during daytime",
+                "Ensure child isn't going to bed overly tired",
+                "Use comfort object if age-appropriate"
+            ],
+            "early-rising": [
+                "Use okay-to-wake clock or visual cue",
+                "Ensure room is dark enough in morning",
+                "Adjust bedtime slightly later if needed",
+                "Keep response boring and minimal before wake time",
+                "Provide quiet activities for when they wake early"
+            ],
+            "nap-struggles": [
+                "Watch for sleep cues (rubbing eyes, yawning)",
+                "Create consistent pre-nap routine",
+                "Ensure nap environment is conducive to sleep",
+                "Adjust nap timing based on age and needs",
+                "Be flexible - some children drop naps earlier"
+            ],
+            
+            // Screen Time
+            "excessive-use": [
+                "Set clear daily time limits",
+                "Use visual timer to show remaining time",
+                "Offer engaging alternatives before screen time",
+                "Create screen-free zones and times",
+                "Model healthy screen habits yourself"
+            ],
+            "tantrums-removal": [
+                "Give clear warnings before transition (5-minute, 1-minute)",
+                "Use visual timer so child can see time ending",
+                "Have engaging activity ready to transition to",
+                "Stay calm and consistent - don't give in to tantrums",
+                "Praise positive transitions when they happen"
+            ],
+            "content-concerns": [
+                "Preview and select age-appropriate content",
+                "Use parental controls and kid-safe modes",
+                "Co-view when possible to discuss content",
+                "Balance entertainment with educational content",
+                "Talk about online safety in age-appropriate ways"
+            ],
+            "bedtime-disruption": [
+                "No screens 1 hour before bedtime",
+                "Charge devices outside bedroom overnight",
+                "Use blue light filters if screens are used in evening",
+                "Replace screen time with calming activities before bed",
+                "Be consistent with screen-free bedtime routine"
+            ]
+        };
+
+        // ===============================
+        // CHECKLIST FUNCTIONALITY
+        // ===============================
+        
+        function setupDetailedChecklist() {
+            // Category toggle functionality
+            document.querySelectorAll('.checklist-category-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const category = this.parentElement;
+                    category.classList.toggle('active');
+                    
+                    // Update arrow
+                    const arrow = this.querySelector('span:last-child');
+                    arrow.textContent = category.classList.contains('active') ? '▼' : '▶';
+                });
+            });
+            
+            // Checkbox functionality
+            document.querySelectorAll('.sub-checklist-item input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const issue = this.getAttribute('data-issue');
+                    const isChecked = this.checked;
+                    
+                    if (isChecked) {
+                        showSolutions(issue);
+                        updateProgress();
+                    } else {
+                        // If this was the last checked item in the category, hide solutions
+                        const category = this.closest('.checklist-category');
+                        const checkedItems = category.querySelectorAll('input[type="checkbox"]:checked');
+                        
+                        if (checkedItems.length === 0) {
+                            hideSolutions();
+                        }
+                    }
+                });
+            });
+        }
+        
+        function showSolutions(issue) {
+            const solutionsPanel = document.getElementById('solutions-panel');
+            const solutionsList = document.getElementById('solutions-list');
+            
+            // Clear previous solutions
+            solutionsList.innerHTML = '';
+            
+            // Add new solutions
+            if (CHECKLIST_SOLUTIONS[issue]) {
+                CHECKLIST_SOLUTIONS[issue].forEach(solution => {
+                    const li = document.createElement('li');
+                    li.textContent = solution;
+                    solutionsList.appendChild(li);
+                });
+                
+                // Show the panel
+                solutionsPanel.style.display = 'block';
+                
+                // Scroll to solutions
+                solutionsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        function hideSolutions() {
+            const solutionsPanel = document.getElementById('solutions-panel');
+            solutionsPanel.style.display = 'none';
+        }
+
+        // ===============================
+        // EMBEDDED PARENTING DATABASE
+        // ===============================
+        const PARENTING_DATABASE = {
+  "parenting_guides": [
+    {
+      "age": 1,
+      "categories": [
+        {
+          "name": "BEHAVIOR",
+          "typical_behaviors": [
+            "Limited impulse control",
+            "Learning by copying everything",
+            "Basic communication through crying and gestures",
+            "Developing independence through exploration"
+          ],
+          "common_challenges": [
+            "Not responding when called",
+            "Copying screen sounds and behaviors",
+            "Wanting everything immediately",
+            "Difficulty with transitions"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My child doesn't respond when I call. Could it be due to screen use?",
+              "answer": "Yes. At this age, too much screen exposure (around or above ~2 hours/day) can reduce a child's responsiveness because screens overstimulate the brain and pull attention away from human interaction.",
+              "solutions": [
+                "Gradually reduce screen time (not suddenly)",
+                "Practice face-to-face interaction ('Look at mama', 'See my eyes')",
+                "Use your child's name before speaking",
+                "Check for hearing issues if concerns persist",
+                "Consult a pediatrician or speech therapist for early evaluation"
+              ],
+              "mistakes_to_avoid": [
+                "Assuming it's just stubbornness",
+                "Shouting from distance",
+                "Not checking for underlying issues"
+              ]
+            },
+            {
+              "question": "Why does my toddler copy everything, even screen sounds or ads?",
+              "answer": "Copying is normal imitation behavior, but screens amplify it because toddlers absorb tone, expressions, and sounds without understanding context.",
+              "solutions": [
+                "Model calm, positive, slow speech",
+                "Use real-life examples ('Look, the dog barked!')",
+                "Avoid background TV",
+                "Reduce screens in front of the child"
+              ],
+              "mistakes_to_avoid": [
+                "Fast-paced cartoons",
+                "Loud, overstimulating videos",
+                "Ignoring the behavior completely"
+              ]
+            },
+            {
+              "question": "How do I teach patience to my toddler who wants everything immediately?",
+              "answer": "One-year-olds have almost no impulse control - their brain isn't mature enough. Patience is taught through tiny, repeated moments.",
+              "solutions": [
+                "Use waiting games ('Let's count to 5')",
+                "Practice turn-taking",
+                "Praise even 1-2 second waiting",
+                "Give simple choices: 'Red cup or blue cup?'"
+              ],
+              "mistakes_to_avoid": [
+                "Long delays",
+                "Scolding for impatience - they can't understand it yet",
+                "Giving in immediately every time"
+              ]
+            }
+          ],
+          "red_flags": [
+            "No response to name consistently",
+            "Limited eye contact",
+            "Not pointing to show interest",
+            "Regression in speech"
+          ]
+        },
+        {
+          "name": "CRYING_AND_EATING",
+          "typical_patterns": [
+            "Crying is primary communication",
+            "Appetite varies daily",
+            "Developing food preferences"
+          ],
+          "common_challenges": [
+            "Crying before feeds",
+            "Refusing food while seeming hungry",
+            "Confusion between hunger and other needs"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My baby cries before every feed  how can I calm them without giving too much milk?",
+              "answer": "Crying doesn't always mean hunger. Babies cry from tiredness, overstimulation, discomfort, or wanting comfort.",
+              "solutions": [
+                "Hold/cuddle to calm first",
+                "Soft talking or singing",
+                "Offer a pacifier if they like it",
+                "Look for real hunger cues: rooting, sucking hands, opening mouth"
+              ],
+              "mistakes_to_avoid": [
+                "Feeding at every cry",
+                "Overfeeding 'just to stop crying'",
+                "Ignoring genuine discomfort"
+              ]
+            },
+            {
+              "question": "What can I do when my baby refuses food but seems hungry and upset?",
+              "answer": "Babies may refuse food because of taste, texture, fatigue, or emotional frustration.",
+              "solutions": [
+                "Offer small, soft bites",
+                "Feed in a calm, distraction-free room",
+                "Let them explore with fingers",
+                "Keep mealtimes stress-free"
+              ],
+              "mistakes_to_avoid": [
+                "Forcing food",
+                "Feeding when they are too tired",
+                "Getting anxious which increases their stress"
+              ]
+            }
+          ],
+          "red_flags": [
+            "Weight loss",
+            "Persistent refusal of all foods",
+            "Signs of dehydration",
+            "Choking or gagging frequently"
+          ]
+        },
+        {
+          "name": "CRYING_AND_SLEEP",
+          "typical_patterns": [
+            "Total sleep: 12-14 hours daily",
+            "1-2 naps during day",
+            "Night wakings normal"
+          ],
+          "common_challenges": [
+            "Frequent night waking",
+            "Crying when overtired but can't sleep",
+            "Separation anxiety at bedtime"
+          ],
+          "qa_pairs": [
+            {
+              "question": "Why does my one-year-old cry a lot, even at night?",
+              "answer": "Crying at this age is common. It can be due to physical discomfort, emotional reassurance needs, or developmental leaps.",
+              "solutions": [
+                "Check for physical discomfort (gas, teething)",
+                "Provide consistent comfort",
+                "Maintain predictable routines",
+                "Ensure comfortable sleep environment"
+              ],
+              "medical_concerns": [
+                "High fever",
+                "Persistent crying for hours",
+                "Poor feeding",
+                "Vomiting, rashes, or dehydration"
+              ]
+            },
+            {
+              "question": "My baby wakes up crying many times at night — how can I help without picking them up every time?",
+              "answer": "Night waking is normal. Constantly lifting them can create dependency, but you can soothe without holding.",
+              "solutions": [
+                "Gently pat tummy or back",
+                "Speak softly ('Mama's here')",
+                "Keep room dark and quiet",
+                "Avoid stimulating them"
+              ],
+              "mistakes_to_avoid": [
+                "Turning on bright lights",
+                "Playing or engaging actively",
+                "Bringing to your bed consistently"
+              ]
+            },
+            {
+              "question": "How can I stop my baby from crying when they are very tired but can't sleep?",
+              "answer": "Overtired babies release stress hormones (cortisol) that make sleep harder.",
+              "solutions": [
+                "Watch early sleep cues (yawning, eye rubbing, zoning out)",
+                "Put to sleep BEFORE overtiredness",
+                "Keep lights dim",
+                "Use calm singing or rocking"
+              ],
+              "preventive_tips": [
+                "Stick to a consistent nap schedule",
+                "Avoid overstimulation before bedtime",
+                "Create calm bedtime routine"
+              ]
+            }
+          ],
+          "red_flags": [
+            "Loud snoring or breathing pauses",
+            "Sleeps less than 8 hours consistently",
+            "Extreme difficulty falling asleep",
+            "Night terrors multiple times weekly"
+          ]
+        },
+        {
+          "name": "EATING_AND_SLEEP",
+          "common_challenges": [
+            "Feeding to sleep dependency",
+            "Night hunger wakes",
+            "Balancing feeding and sleep schedules"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My toddler won't fall asleep without breastfeeding once he wakes up at night. Is it normal?",
+              "answer": "Normal but not necessary. At one year, most babies can sleep 10–12 hours without feeding.",
+              "solutions": [
+                "Slowly shorten night feeds",
+                "Use patting/rocking instead",
+                "Offer more food in daytime",
+                "Establish consistent bedtime routine"
+              ],
+              "mistakes_to_avoid": [
+                "Sudden stopping — causes distress",
+                "Replacing with other sleep props immediately"
+              ]
+            },
+            {
+              "question": "Should I feed my baby before bedtime if they are only a little hungry?",
+              "answer": "Light feeding is fine, but too much can disrupt sleep.",
+              "solutions": [
+                "Offer a small amount",
+                "Keep the routine quiet, dim, calm",
+                "Burp properly after feeding"
+              ],
+              "mistakes_to_avoid": [
+                "Large bottles right before sleep",
+                "Feeding until completely full"
+              ]
+            },
+            {
+              "question": "How do I balance night feeds and helping my baby sleep longer?",
+              "answer": "The key is reducing stimulation.",
+              "solutions": [
+                "Do a 'dream feed' before your bedtime",
+                "Use soft voice, avoid bright lights",
+                "Keep interaction minimal",
+                "Gradually increase time between feeds"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "SCREEN_TIME",
+          "recommended_limits": "Minimal, ideally less than 1 hour daily of high-quality content",
+          "common_issues": [
+            "Overstimulation from screens",
+            "Reduced responsiveness to human interaction",
+            "Screen dependency for calming"
+          ],
+          "qa_pairs": [
+            {
+              "question": "Is it okay to give my one-year-old a smartphone to stop crying?",
+              "answer": "No. Screens may stop the crying temporarily but increase irritability, attention issues, and screen dependency.",
+              "better_alternatives": [
+                "Stuffed toys",
+                "Colors, textures",
+                "Singing and rocking",
+                "Simple interactive games"
+              ]
+            },
+            {
+              "question": "My baby cries when I take away my phone or tablet — how can I help them get used to it?",
+              "answer": "Babies get attached because screens are stimulating.",
+              "solutions": [
+                "Give a warning ('1 more minute')",
+                "Replace with a toy",
+                "Gradually reduce screen time daily",
+                "Offer engaging alternatives"
+              ],
+              "mistakes_to_avoid": [
+                "Abrupt removal",
+                "Using screen as comfort",
+                "Giving in to crying"
+              ]
+            },
+            {
+              "question": "Can I use a screen to calm my baby?",
+              "answer": "Try not to. It creates emotional dependence.",
+              "better_alternatives": [
+                "Holding them",
+                "Talking",
+                "Singing",
+                "Sensory toys",
+                "Going for walk"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "COMBINED_PROBLEMS",
+          "qa_pairs": [
+            {
+              "categories": ["SCREEN", "EATING"],
+              "question": "Is it okay to show my baby a video while feeding?",
+              "answer": "Rarely is okay, but frequent use affects hunger cues and creates a habit.",
+              "solutions": [
+                "Try screen-free feeding first",
+                "Keep any video short and quiet",
+                "Focus on interaction during meals"
+              ]
+            },
+            {
+              "categories": ["SCREEN", "EATING"],
+              "question": "My baby won't eat without a screen — how can I fix this?",
+              "answer": "This is a common dependency.",
+              "solutions": [
+                "Gradually reduce screen time during meals",
+                "Use colorful bowls or spoons",
+                "Talk or smile while feeding",
+                "Praise screen-free eating"
+              ]
+            },
+            {
+              "categories": ["SCREEN", "SLEEP"],
+              "question": "My baby falls asleep watching a screen but wakes up quickly — what can I do?",
+              "answer": "Screens overstimulate the brain, leading to lighter sleep.",
+              "solutions": [
+                "Turn off screens before bedtime",
+                "Use soft songs, talking, or patting",
+                "Create screen-free bedtime routine"
+              ]
+            },
+            {
+              "categories": ["CRYING", "EATING", "SCREEN"],
+              "question": "My baby cries and won't eat unless I show a video — how can I handle this?",
+              "answer": "This is a linked dependency between hunger and screen stimulation.",
+              "solutions": [
+                "Reduce screen slowly across days",
+                "Make mealtimes fun and interactive",
+                "Praise even small screen-free bites",
+                "Stay consistent with boundaries"
+              ]
+            },
+            {
+              "categories": ["CRYING", "EATING", "SLEEP"],
+              "question": "My baby cries before night feeds and wakes often — how can I help?",
+              "answer": "Inconsistent schedules worsen crying and sleep patterns.",
+              "solutions": [
+                "Regular bedtime",
+                "Keep night feeds short and quiet",
+                "Avoid stimulating activities",
+                "Teach baby to fall asleep with minimal help"
+              ]
+            },
+            {
+              "categories": ["CRYING", "EATING", "SCREEN", "SLEEP"],
+              "question": "My baby cries when I remove a screen, refuses food, and wakes often — what should I do?",
+              "answer": "These habits feed into each other. The solution is consistent routine.",
+              "solutions": [
+                "Create fixed times for meals, screens, and sleep",
+                "Reduce screen slowly, not suddenly",
+                "Keep feeding calm",
+                "Use talking/holding for comfort",
+                "Stay patient — improvement comes gradually"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "age": 2,
+      "categories": [
+        {
+          "name": "BEHAVIOR",
+          "typical_behaviors": [
+            "Short attention span (1–3 minutes)",
+            "Starting independence ('me do!')",
+            "Early tantrums when frustrated",
+            "Difficulty waiting",
+            "Rough play (not aggression, just immature control)",
+            "Selective listening"
+          ],
+          "common_challenges": [
+            "Demanding things instantly",
+            "Throwing toys or hitting when excited",
+            "Not listening on first call",
+            "Difficulty sharing toys"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My 2-year-old demands things instantly — how do I teach patience?",
+              "answer": "Use micro-waiting. Toddlers can wait 3–5 seconds only.",
+              "solutions": [
+                "Say 'Wait… 1…2…3… now your turn!'",
+                "Turn-taking games (car rolling, ball passing)",
+                "Establish predictable routines"
+              ],
+              "mistakes_to_avoid": [
+                "Forcing long waits ('wait 5 minutes') → impossible at this age",
+                "Getting angry about impatience"
+              ]
+            },
+            {
+              "question": "My toddler throws toys or hits when excited — is this normal?",
+              "answer": "Yes, common. They cannot regulate physical energy.",
+              "solutions": [
+                "Model gentle hands",
+                "Offer an 'energy outlet' (jumping, running, pillow hits)",
+                "Show what to do with toys: 'Cars go on road, not on people.'"
+              ]
+            },
+            {
+              "question": "My child doesn't listen on the first call — why?",
+              "answer": "Because toddlers can't switch tasks instantly.",
+              "solutions": [
+                "Use physical touch + eye contact",
+                "Say name → give 1 clear instruction",
+                "Use choice: 'Red cup or blue cup?'"
+              ]
+            },
+            {
+              "question": "My 2-year-old doesn't share toys. Should I worry?",
+              "answer": "No. Sharing develops closer to age 3–4.",
+              "solutions": [
+                "Parallel play (side-by-side play)",
+                "Use timer for turn-taking",
+                "Narrate: 'Your turn… Now friend's turn.'"
+              ]
+            }
+          ],
+          "red_flags": [
+            "Shows severe aggression multiple times daily",
+            "Hurts others with intent",
+            "No pretend play",
+            "No response to name call",
+            "Cannot follow simple 1-step instructions"
+          ]
+        },
+        {
+          "name": "CRYING_EMOTIONAL_REGULATION",
+          "typical_patterns": [
+            "Big emotions, small vocabulary",
+            "Frequent crying when routines change",
+            "Cries due to frustration, hunger, overstimulation"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My 2-year-old cries before meals — why?",
+              "answer": "Common reasons: overtired, overstimulated, wants preferred food.",
+              "solutions": [
+                "Offer water first",
+                "Keep mealtime routine fixed",
+                "Start with familiar foods"
+              ]
+            },
+            {
+              "question": "Why does my toddler cry at bedtime even when tired?",
+              "answer": "Separation fear + overstimulation.",
+              "solutions": [
+                "Use 3-step routine (brush → story → cuddle)",
+                "No screens 1 hr before sleep",
+                "Offer comfort object"
+              ]
+            },
+            {
+              "question": "My toddler cries when overtired but refuses to lie down — why?",
+              "answer": "Being overtired gives adrenaline rush.",
+              "solutions": [
+                "Move bedtime earlier by 15–20 min",
+                "Use dim lighting + calm activities before sleep",
+                "Avoid rough play during last hour"
+              ]
+            }
+          ],
+          "red_flags": [
+            "Crying lasts more than 45 minutes every day",
+            "Constant irritability",
+            "Crying with no clear trigger for weeks",
+            "No words used to express basic needs"
+          ]
+        },
+        {
+          "name": "EATING",
+          "typical_patterns": [
+            "Appetites vary day to day",
+            "Food refusal phases",
+            "Preference for snacks",
+            "Messy eating is normal",
+            "Needs iron + protein-rich meals"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My toddler refuses food but cries like they're hungry. Why?",
+              "answer": "Confusion between hunger vs control.",
+              "solutions": [
+                "Offer small portions (2–3 spoons)",
+                "Let them explore food with hands",
+                "No pressure feeding",
+                "No snacks 1 hour before meals"
+              ]
+            },
+            {
+              "question": "My toddler wants milk to sleep. Is this okay?",
+              "answer": "Common, but not ideal.",
+              "solutions": [
+                "Give milk 20–30 minutes before bedtime",
+                "Replace with story + cuddles",
+                "Reduce milk gradually each week"
+              ]
+            },
+            {
+              "question": "My child wakes hungry at night — how to prevent?",
+              "answer": "Dinner not filling enough.",
+              "solutions": [
+                "Add protein + carbs (dal, roti, rice)",
+                "Offer small bedtime snack",
+                "Avoid sugary treats at night"
+              ]
+            }
+          ],
+          "red_flags": [
+            "Weight loss",
+            "Very limited diet (only 2–3 foods)",
+            "Choking frequently",
+            "No chewing, only swallowing soft foods"
+          ]
+        },
+        {
+          "name": "SLEEP",
+          "typical_patterns": [
+            "Total sleep: 11–13 hours",
+            "One nap (1–2 hours)",
+            "Bedtime resistance common"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My toddler wakes crying at night — how do I help without picking up?",
+              "answer": "Offer reassurance without creating dependency.",
+              "solutions": [
+                "Pat back gently",
+                "One calming sentence: 'Mama's here.'",
+                "No lights, no conversation"
+              ]
+            },
+            {
+              "question": "Why is bedtime a daily fight?",
+              "answer": "Overstimulation, unpredictable routine, late nap, or screens.",
+              "solutions": [
+                "Fix routine time",
+                "Calm play before bed",
+                "No screens for 1 hour prior"
+              ]
+            },
+            {
+              "question": "Should I use night lights?",
+              "answer": "Yes, dim warm lights only."
+            }
+          ],
+          "red_flags": [
+            "Loud snoring or gasping",
+            "Takes >60 minutes to fall asleep daily",
+            "Sleeps <8 hours",
+            "Severe night terrors daily"
+          ]
+        },
+        {
+          "name": "SCREEN_TIME",
+          "typical_behaviors": [
+            "Deep focus mode → toddler ignores name when watching screens",
+            "Prefers fast, colorful content",
+            "Copies cartoon speech or actions",
+            "Overreacts when screen is removed",
+            "Wants screens during eating or boredom"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My 2-year-old ignores me when watching screens — is this normal?",
+              "answer": "Yes, but not healthy. Screens at this age put them in 'hyper-focus' mode → they tune out voices and touch.",
+              "solutions": [
+                "Reduce screen time slowly (5–10 mins/week)",
+                "Touch shoulder + say name before giving instruction",
+                "Use face-to-face play (cars, blocks, pretend cooking)",
+                "Remove background TV entirely"
+              ],
+              "mistakes_to_avoid": [
+                "Shouting from another room",
+                "Letting screens run during meals"
+              ]
+            },
+            {
+              "question": "My toddler copies cartoon characters. Should I be worried?",
+              "answer": "Not usually. Imitation is normal, but excessive imitation means the content is overstimulating.",
+              "solutions": [
+                "Use slow-paced content only (Bluey, Peppa Pig, Daniel Tiger)",
+                "Encourage copying YOU ('Let's stir like Mama!')",
+                "Replace fast cartoons with storytelling or pretend play"
+              ],
+              "mistakes_to_avoid": [
+                "Allowing YouTube autoplay",
+                "Using fast-paced, overstimulating content"
+              ]
+            },
+            {
+              "question": "Why does my toddler cry so much when I take the screen away?",
+              "answer": "Dopamine drop → frustration. This is withdrawal, not misbehavior.",
+              "solutions": [
+                "Give countdown: 1 min → 30 sec → 10 sec",
+                "Offer transition activity (coloring, blocks)",
+                "Keep screen schedule predictable"
+              ],
+              "red_flag": "Violent or self-harm behavior during screen removal"
+            },
+            {
+              "question": "My toddler won't eat without a screen — how to fix it?",
+              "answer": "They've linked 'eating = watching.' It's learned, reversible.",
+              "solutions": [
+                "Reduce screen duration gradually (5 → 3 → 1 min)",
+                "Use colorful plates, simple foods",
+                "Sit and eat WITH the child",
+                "Praise even one bite without screen"
+              ],
+              "mistakes_to_avoid": [
+                "Removing screens suddenly → meltdown",
+                "Offering junk food to compensate"
+              ]
+            },
+            {
+              "question": "Should I avoid screens at bedtime?",
+              "answer": "Yes. Screens delay melatonin for 60–90 minutes.",
+              "solutions": [
+                "1-hour screen-free window",
+                "Replace with stories, gentle music",
+                "Dim lights before bedtime"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "COMBINED_PROBLEMS",
+          "qa_pairs": [
+            {
+              "categories": ["SCREEN", "CRYING"],
+              "question": "My toddler cries when screens are removed — how do I reduce this?",
+              "solutions": [
+                "Give warnings",
+                "Replace screen with fun activity",
+                "Keep screen schedule consistent"
+              ]
+            },
+            {
+              "categories": ["CRYING", "EATING"],
+              "question": "My child cries and refuses food — what should I do?",
+              "solutions": [
+                "Check hunger cues",
+                "Offer small portions",
+                "Remove distractions",
+                "Keep consistent meal times"
+              ]
+            },
+            {
+              "categories": ["CRYING", "SLEEP"],
+              "question": "My toddler cries at bedtime every night.",
+              "solutions": [
+                "Lower stimulation 1 hour before bed",
+                "Predictable 10–15 min routine",
+                "Comfort object"
+              ]
+            },
+            {
+              "categories": ["SCREEN", "EATING"],
+              "question": "My toddler eats only with screens — how to break this habit?",
+              "solutions": [
+                "Reduce screen time slowly",
+                "Make meals engaging",
+                "Sit and eat together"
+              ]
+            },
+            {
+              "categories": ["EATING", "SLEEP"],
+              "question": "My toddler wakes hungry at night.",
+              "solutions": [
+                "Improve dinner quality",
+                "Add bedtime snack",
+                "Fix evening routine"
+              ]
+            },
+            {
+              "categories": ["CRYING", "SCREEN", "EATING", "SLEEP"],
+              "question": "My toddler cries for screens, refuses food, and wakes at night — what do I do?",
+              "answer": "This is a full cycle: screens → bad eating → hunger → bad sleep → crying.",
+              "solutions": [
+                "Create fixed routine (meal → play → screen → outdoor → dinner → bedtime)",
+                "Reduce screen dependence slowly",
+                "Improve eating quality",
+                "Add calming nighttime routine",
+                "Stay consistent for 2–3 weeks"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "age": 3,
+      "categories": [
+        {
+          "name": "BEHAVIOR",
+          "typical_behaviors": [
+            "Strong independence ('I can do it myself')",
+            "Early negotiation ('Wait 1 more minute', 'I want the red one')",
+            "Imaginative play — stories, pretend friends",
+            "Early empathy — comforts peers, but touch may be rough",
+            "Short attention span (2–5 minutes for boring tasks)",
+            "Increased stubbornness — tests limits",
+            "Begins to play cooperatively but struggles with sharing",
+            "Asks many 'why?' questions — curiosity peaks"
+          ],
+          "common_challenges": [
+            "Difficulty switching activities",
+            "Over-excitement → rough play",
+            "Possessiveness of toys/parents",
+            "Selective listening",
+            "Resistance to new environments"
+          ],
+          "qa_pairs": [
+            {
+              "question": "My 3-year-old refuses to share toys — is this normal?",
+              "answer": "Yes. Sharing skills develop gradually around age 4.",
+              "solutions": [
+                "Parallel play → side-by-side with shared materials",
+                "Use timers for turn-taking",
+                "Narrate turns: 'Your turn… Now friend's turn.'"
+              ],
+              "mistakes_to_avoid": [
+                "Forcing sharing → increases frustration",
+                "Yelling or punishing → reduces willingness"
+              ]
+            },
+            {
+              "question": "My child gets upset switching tasks. What should I do?",
+              "answer": "Switching is challenging due to short attention span.",
+              "solutions": [
+                "Give 3-step countdowns before transitions (5–3–1)",
+                "Use 'first–then' method: 'First clean blocks, then story.'",
+                "Model transitions with small responsibilities"
+              ]
+            },
+            {
+              "question": "My toddler shows early empathy but sometimes hits others. Normal?",
+              "answer": "Yes. Emotional regulation is still developing.",
+              "solutions": [
+                "Label emotions: 'You're angry because… I understand.'",
+                "Provide safe outlets (pillow hits, play mats)",
+                "Teach gentle touch by showing and guiding"
+              ]
+            }
+          ],
+          "evidence_based_solutions": [
+            "Use 2-choice strategy: 'Red cup or blue cup?' → reduces resistance",
+            "Use visual schedules for routines (morning, bedtime, outings)",
+            "Model emotional labels: 'You're frustrated because the block fell.'",
+            "Use 'first–then' method: 'First clean up, then story time.'",
+            "Prepare child for transitions with countdowns: 5–3–1 minute",
+            "Give small responsibilities (help carry groceries, feed pet) → increases cooperation",
+            "Encourage cooperative play by giving a shared mission: 'Let's build a tower together.'",
+            "Validate feelings before correcting behavior: 'I know you want the toy AND you can't snatch.'"
+          ],
+          "red_flags": [
+            "No pretend play",
+            "Cannot follow 2-step instructions",
+            "Aggressive behavior persists despite guidance",
+            "No interest in other children",
+            "Speech far behind peers (<3–4 word sentences)"
+          ]
+        },
+        {
+          "name": "TANTRUMS",
+          "causes": [
+            "Big emotions + limited language",
+            "Independence clashes with limits",
+            "Fatigue, hunger, overstimulation"
+          ],
+          "common_triggers": [
+            "Being told 'no'",
+            "Ending fun activity",
+            "Waiting for turn or sharing",
+            "Clothing discomfort",
+            "New environments"
+          ],
+          "what_not_to_do": [
+            "Do NOT lecture during tantrum — can't process",
+            "Do NOT give what they want to stop crying — reinforces tantrum",
+            "Do NOT yell or threaten — increases fear"
+          ],
+          "calming_strategies": [
+            "Stay calm, slow voice",
+            "Kneel to eye level",
+            "Label emotion: 'You're angry the toy broke. I'm here.'",
+            "Calm-down corner: pillows, fidget toys, books",
+            "Co-regulation: sit nearby until calm",
+            "Post-tantrum discussion: teach replacement sentences",
+            "Teach: 'I'm upset because…' 'I need a break'"
+          ],
+          "red_flags": [
+            "Tantrums >20–30 min regularly",
+            "Hurts self or others frequently",
+            "Does not decrease with routines"
+          ]
+        },
+        {
+          "name": "SCREEN_TIME",
+          "recommended_limits": "Max 1 hour/day high-quality content",
+          "best_practices": [
+            "Co-view whenever possible",
+            "Screens after play, books, meals",
+            "Choose slow-paced, educational shows (Daniel Tiger, Peppa Pig, Bluey, Sesame Street)",
+            "Turn off autoplay",
+            "Use visual timer → child knows end time",
+            "Explain content during viewing",
+            "No screens 1 hour before bedtime",
+            "Offer alternative dopamine sources: jumping, building, coloring"
+          ],
+          "common_issues": [
+            "Difficulty stopping screen sessions",
+            "Demands screens at meals or bedtime",
+            "Short attention span from fast content",
+            "Screen becomes calming tool → reduces self-regulation"
+          ],
+          "red_flags": [
+            "Meltdowns every screen removal",
+            "Prefers screens over toys/people",
+            "Language delay + heavy screen use"
+          ]
+        },
+        {
+          "name": "SLEEP",
+          "typical_patterns": [
+            "Total sleep: 10–12 hrs/day",
+            "Most drop naps by 3–4 yrs",
+            "Night wakings may occur due to dreams",
+            "Bedtime resistance increases"
+          ],
+          "common_challenges": [
+            "Fear of dark/monsters",
+            "Trouble settling without parent",
+            "Early waking",
+            "Repeatedly getting out of bed"
+          ],
+          "solutions": [
+            "Consistent bedtime routine: bath → pajamas → brush → short play → story → lights out",
+            "Bedtime pass: 1–2 requests allowed",
+            "Comfort object (toy, blanket)",
+            "Screen-free 1–2 hrs before bed",
+            "Calmly walk back if child leaves bed",
+            "Night light: warm & dim",
+            "Nap ends before 3 PM",
+            "Avoid sugar & excitement near bedtime"
+          ],
+          "red_flags": [
+            "Loud snoring, pauses in breathing",
+            "Sleeps <8 hrs consistently",
+            "Severe night terrors multiple times/week"
+          ]
+        },
+        {
+          "name": "COMBINED_PROBLEMS",
+          "qa_pairs": [
+            {
+              "categories": ["SCREEN", "CRYING"],
+              "question": "My child cries when screens are removed — how to help?",
+              "solutions": [
+                "Countdown + transition to alternate activity",
+                "Keep removal consistent",
+                "Avoid arguing"
+              ]
+            },
+            {
+              "categories": ["CRYING", "EATING"],
+              "question": "Cries refusing food — what to do?",
+              "solutions": [
+                "Offer small portions",
+                "Remove distractions",
+                "Keep calm, consistent routine"
+              ]
+            },
+            {
+              "categories": ["CRYING", "SLEEP"],
+              "question": "Cries at bedtime — help?",
+              "solutions": [
+                "Calm pre-bedtime activities",
+                "Fixed routine",
+                "Comfort object"
+              ]
+            },
+            {
+              "categories": ["SCREEN", "EATING"],
+              "question": "Only eats with screens — fix?",
+              "solutions": [
+                "Reduce screen gradually",
+                "Sit and eat together",
+                "Make meals interactive"
+              ]
+            },
+            {
+              "categories": ["EATING", "SLEEP"],
+              "question": "Wakes hungry at night — fix?",
+              "solutions": [
+                "Filling dinner + small bedtime snack",
+                "Fixed evening routine"
+              ]
+            },
+            {
+              "categories": ["SCREEN", "CRYING", "EATING", "SLEEP"],
+              "question": "Cries + screen + food + sleep issues — what to do?",
+              "answer": "Linked cycle: screens → bad eating → night hunger → tantrums.",
+              "solutions": [
+                "Predictable daily routine (meal → play → screen → outdoor → dinner → bedtime)",
+                "Reduce screen slowly",
+                "Improve meals",
+                "Bedtime routine: story → cuddle → lights out",
+                "Consistency 2–3 weeks"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+        // ===============================
+        // IMPROVED AI RESPONSE SYSTEM
+        // ===============================
+        
+        class EmbeddedServer {
+            constructor() {
+                this.port = 3000;
+                this.routes = {};
+                this.setupRoutes();
+            }
+            
+            setupRoutes() {
+                this.routes['POST:/api/gemini-fallback'] = this.handleAIRequest.bind(this);
+                this.routes['GET:/api/status'] = this.handleStatusCheck.bind(this);
+            }
+            
+            async handleRequest(method, path, body) {
+                const routeKey = `${method}:${path}`;
+                if (this.routes[routeKey]) {
+                    return await this.routes[routeKey](body);
+                }
+                return { error: 'Route not found', status: 404 };
+            }
+            
+            async handleAIRequest(body) {
+                try {
+                    const { prompt } = body;
+                    const response = this.getAIResponseFromDatabase(prompt);
+                    return { 
+                        text: response,
+                        success: true 
+                    };
+                } catch (error) {
+                    return { 
+                        error: 'AI processing failed', 
+                        status: 500 
+                    };
+                }
+            }
+            
+            handleStatusCheck() {
+                return { 
+                    ok: true, 
+                    status: 'ok',
+                    message: 'Embedded server running successfully',
+                    timestamp: new Date().toISOString()
+                };
+            }
+            
+            getAIResponseFromDatabase(prompt) {
+                const lowerPrompt = prompt.toLowerCase();
+                
+                // IMPROVED: Better keyword matching with priority
+                const matchedQA = this.findBestMatchingQA(lowerPrompt);
+                
+                if (matchedQA) {
+                    return this.formatQAResponse(matchedQA);
+                }
+                
+                // Fallback for general questions
+                return this.getFallbackResponse(lowerPrompt);
+            }
+            
+            findBestMatchingQA(prompt) {
+                let bestMatch = null;
+                let highestScore = 0;
+                
+                // Define category keywords with weights
+                const categoryKeywords = {
+                    'eating': ['eat', 'food', 'hungry', 'meal', 'feed', 'refuse', 'picky', 'vegetables', 'nutrition'],
+                    'sleep': ['sleep', 'bedtime', 'nap', 'wake', 'night', 'awake', 'rest', 'tired'],
+                    'behavior': ['behavior', 'tantrum', 'cry', 'anger', 'listen', 'obey', 'discipline', 'naughty'],
+                    'screen': ['screen', 'tv', 'tablet', 'phone', 'video', 'cartoon', 'youtube', 'digital'],
+                    'crying': ['cry', 'crying', 'whine', 'fuss', 'upset', 'comfort']
+                };
+                
+                // Search through database
+                for (const guide of PARENTING_DATABASE.parenting_guides) {
+                    for (const category of guide.categories) {
+                        for (const qa of category.qa_pairs || []) {
+                            const score = this.calculateMatchScore(prompt, qa.question, categoryKeywords);
+                            
+                            if (score > highestScore) {
+                                highestScore = score;
+                                bestMatch = qa;
+                            }
+                        }
+                    }
+                }
+                
+                // Only return if we have a good match
+                return highestScore > 2 ? bestMatch : null;
+            }
+            
+            calculateMatchScore(prompt, question, categoryKeywords) {
+                let score = 0;
+                const lowerQuestion = question.toLowerCase();
+                
+                // Check for exact phrase matches
+                const questionWords = lowerQuestion.split(' ');
+                for (const word of questionWords) {
+                    if (word.length > 4 && prompt.includes(word)) {
+                        score += 2; // Higher score for longer matching words
+                    } else if (word.length > 3 && prompt.includes(word)) {
+                        score += 1;
+                    }
+                }
+                
+                // Check category-specific keywords
+                for (const [category, keywords] of Object.entries(categoryKeywords)) {
+                    for (const keyword of keywords) {
+                        if (prompt.includes(keyword) && lowerQuestion.includes(keyword)) {
+                            score += 3; // Bonus for category keyword matches
+                        }
+                    }
+                }
+                
+                return score;
+            }
+            
+            formatQAResponse(qa) {
+                let response = qa.answer + "\n\n";
+                
+                if (qa.solutions && qa.solutions.length > 0) {
+                    response += "🔧 **Solutions:**\n";
+                    qa.solutions.forEach((solution, index) => {
+                        response += `${index + 1}. ${solution}\n`;
+                    });
+                }
+                
+                if (qa.mistakes_to_avoid && qa.mistakes_to_avoid.length > 0) {
+                    response += "\n⚠️ **Avoid:**\n";
+                    qa.mistakes_to_avoid.forEach((mistake, index) => {
+                        response += `${index + 1}. ${mistake}\n`;
+                    });
+                }
+                
+                if (qa.better_alternatives && qa.better_alternatives.length > 0) {
+                    response += "\n💡 **Better Alternatives:**\n";
+                    qa.better_alternatives.forEach((alternative, index) => {
+                        response += `${index + 1}. ${alternative}\n`;
+                    });
+                }
+                
+                if (qa.preventive_tips && qa.preventive_tips.length > 0) {
+                    response += "\n🛡️ **Prevention Tips:**\n";
+                    qa.preventive_tips.forEach((tip, index) => {
+                        response += `${index + 1}. ${tip}\n`;
+                    });
+                }
+                
+                return response;
+            }
+            
+            getFallbackResponse(prompt) {
+                // Improved fallback responses based on detected category
+                if (prompt.includes('eat') || prompt.includes('food') || prompt.includes('hungry')) {
+                    return "For eating issues, try offering small portions repeatedly, make mealtime fun and stress-free, and be patient - it can take 10+ exposures for toddlers to try new foods!";
+                }
+                else if (prompt.includes('sleep') || prompt.includes('bed') || prompt.includes('nap')) {
+                    return "For sleep challenges, establish a consistent bedtime routine, ensure the room is dark and quiet, and avoid screens 1 hour before bedtime.";
+                }
+                else if (prompt.includes('cry') || prompt.includes('tantrum') || prompt.includes('anger')) {
+                    return "When dealing with crying or tantrums, stay calm, acknowledge their feelings, and use distraction techniques. Remember this is normal developmental behavior.";
+                }
+                else if (prompt.includes('screen') || prompt.includes('tv') || prompt.includes('tablet')) {
+                    return "For screen time concerns, limit to 1 hour daily of high-quality content, co-view when possible, and avoid screens during meals and before bedtime.";
+                }
+                else {
+                    return "I'd love to help with your parenting question! Could you tell me your child's age and provide more details about the specific situation?";
+                }
+            }
+        }
+
+        // ===============================
+        // TEST THE IMPROVED SYSTEM
+        // ===============================
+        
+        function testImprovedAI() {
+            const testCases = [
+                "my child is not eating too",
+                "my toddler won't eat vegetables",
+                "baby crying at bedtime",
+                "child not sleeping through night",
+                "too much screen time",
+                "tantrums in supermarket"
+            ];
+            
+            const server = new EmbeddedServer();
+            
+            testCases.forEach(testCase => {
+                console.log(`Question: "${testCase}"`);
+                const response = server.getAIResponseFromDatabase(testCase);
+                console.log(`Response: ${response.substring(0, 100)}...`);
+                console.log('---');
+            });
+        }
+
+        // ===============================
+        // EMBEDDED SERVER FOR MOBILE APPS
+        // ===============================
+        
+        // Create embedded server instance
+        const embeddedServer = new EmbeddedServer();
+
+        // Intercept all fetch calls to handle them locally
+        const originalFetch = window.fetch;
+        window.fetch = async function(resource, options = {}) {
+            const url = typeof resource === 'string' ? resource : resource.url;
+            
+            // Handle local server routes
+            if (url.includes('/api/')) {
+                try {
+                    const method = options.method || 'GET';
+                    let body = null;
+                    
+                    if (options.body) {
+                        body = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+                    }
+                    
+                    const response = await embeddedServer.handleRequest(method, url, body);
+                    
+                    // Return a proper Response object
+                    return new Response(JSON.stringify(response), {
+                        status: response.error ? (response.status || 500) : 200,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        }
+                    });
+                } catch (error) {
+                    console.error('Embedded server error:', error);
+                    return new Response(JSON.stringify({ 
+                        error: 'Internal server error',
+                        status: 500 
+                    }), {
+                        status: 500,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+            }
+            
+            // For non-API calls, use original fetch
+            return originalFetch(resource, options);
+        };
+
+        // ===============================
+        // ENHANCED SERVER STATUS FOR MOBILE
+        // ===============================
+        
+        function initializeMobileServer() {
+            console.log('🔄 Embedded MiniMind Server Started');
+            console.log('📱 Mobile-Compatible Mode: Active');
+            console.log('🗄️  Parenting Database: Loaded');
+            
+            // Update UI to show embedded server status
+            const serverStatusEl = document.getElementById('server-status');
+            if (serverStatusEl) {
+                serverStatusEl.textContent = 'Server: Embedded';
+                serverStatusEl.style.background = '#28a745';
+                serverStatusEl.title = 'Built-in server - works everywhere!';
+            }
+            
+            // Force server health to true since we have embedded server
+            window.serverHealthy = true;
+            window.forceServerOnline = true;
+        }
+
+        // ===============================
+        // MOBILE APP DETECTION & OPTIMIZATION
+        // ===============================
+        
+        function detectMobileEnvironment() {
+            // Check if we're in a mobile app environment
+            const isMobileApp = window.cordova || window.Capacitor || 
+                              window.ReactNativeWebView || 
+                              navigator.userAgent.includes('Mobile');
+            
+            if (isMobileApp) {
+                console.log('📱 Mobile App Environment Detected');
+                // Optimize for mobile
+                optimizeForMobile();
+            }
+            
+            return isMobileApp;
+        }
+        
+        function optimizeForMobile() {
+            // Mobile-specific optimizations
+            document.body.style.fontSize = '16px'; // Better touch targets
+            document.body.setAttribute('data-mobile', 'true');
+            
+            // Enhance touch interactions
+            document.querySelectorAll('.btn, .action-btn').forEach(btn => {
+                btn.style.minHeight = '44px'; // Apple's recommended touch target size
+            });
+        }
+
+        // ===============================
+        // IMPROVED QUICK ACTIONS WITH BETTER QUESTIONS
+        // ===============================
+        
+        function setupQuickActions() {
+            const questionMap = {
+                sleep: "My child wakes up multiple times at night and has trouble falling asleep. What should I do?",
+                eating: "My toddler refuses to eat most foods and only wants snacks. How can I improve their eating habits?",
+                behavior: "My child has frequent tantrums when they don't get what they want. What's the best way to handle this?",
+                screen: "My toddler cries and throws tantrums when I take away the tablet. How can I manage screen time better?",
+                crying: "My baby cries constantly and I've tried everything but can't comfort them. What could be wrong?",
+                tantrums: "My child has massive meltdowns in public places. How should I respond to public tantrums?"
+            };
+            
+            document.querySelectorAll('.action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const issue = this.getAttribute('data-issue');
+                    if (questionMap[issue]) {
+                        document.getElementById('chat-input').value = questionMap[issue];
+                        document.getElementById('send-btn').click();
+                    }
+                });
+            });
+        }
+
+        // ===============================
+        // UPDATE YOUR EXISTING CHAT SYSTEM
+        // ===============================
+        
+        function setupChat() {
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+            const typingIndicator = document.getElementById('typing-indicator');
+            
+            // Update the send button handler to use embedded server
+            sendBtn.addEventListener('click', async function() {
+                const message = chatInput.value.trim();
+                if (message === '') return;
+
+                addMessage(message, 'user');
+                chatInput.value = '';
+
+                // Show typing indicator
+                typingIndicator.style.display = 'flex';
+
+                try {
+                    // Always use embedded server - no external dependencies
+                    const response = await fetch('/api/gemini-fallback', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ prompt: message })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    typingIndicator.style.display = 'none';
+                    
+                    if (data.text && data.text !== 'undefined') {
+                        addMessage(data.text, 'ai');
+                    } else {
+                        // Fallback to direct database query
+                        const fallbackResponse = embeddedServer.getAIResponseFromDatabase(message);
+                        addMessage(fallbackResponse, 'ai');
+                    }
+                } catch (error) {
+                    console.error('Chat error:', error);
+                    typingIndicator.style.display = 'none';
+                    const fallbackResponse = embeddedServer.getAIResponseFromDatabase(message);
+                    addMessage(fallbackResponse, 'ai');
+                }
+            });
+
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendBtn.click();
+                }
+            });
+        }
+
+        // ===============================
+        // YOUR EXISTING CODE
+        // ===============================
+        
+        // Loading system
+        const loadingSteps = [
+            { id: 'step1', text: 'Initializing parenting database...' },
+            { id: 'step2', text: 'Loading AI assistant...' },
+            { id: 'step3', text: 'Setting up your profile...' },
+            { id: 'step4', text: 'Almost ready...' }
+        ];
+
+        let currentStep = 0;
+
+        function updateLoadingStep() {
+            if (currentStep < loadingSteps.length) {
+                // Update current step
+                const step = loadingSteps[currentStep];
+                const stepElement = document.getElementById(step.id);
+                if (stepElement) {
+                    stepElement.classList.add('active');
+                }
+                
+                currentStep++;
+                
+                if (currentStep === loadingSteps.length) {
+                    // All steps complete, hide loading screen
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('loading-screen').style.display = 'none';
+                            document.getElementById('app-container').classList.remove('hidden');
+                            showConfetti();
+                        }, 500);
+                    }, 1000);
+                } else {
+                    // Continue to next step
+                    setTimeout(updateLoadingStep, 800);
+                }
+            }
+        }
+
+        // Chat functionality
+        function addMessage(text, sender) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Update progress
+            if (sender === 'ai') {
+                updateProgress();
+            }
+        }
+
+        // Progress system
+        let solvedCount = 0;
+        let streakCount = 0;
+
+        function updateProgress() {
+            solvedCount++;
+            streakCount++;
+            
+            document.getElementById('solved-count').textContent = solvedCount;
+            document.getElementById('streak-count').textContent = streakCount;
+            document.getElementById('progress-percent').textContent = Math.min(solvedCount * 5, 100) + '%';
+            
+            // Update progress bars
+            document.querySelectorAll('.progress-fill').forEach(fill => {
+                const progress = parseInt(fill.getAttribute('data-progress'));
+                fill.style.width = Math.min(progress + 5, 100) + '%';
+            });
+        }
+
+        // Checklist functionality
+        function setupChecklist() {
+            document.querySelectorAll('.checklist-item input').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        // Add to streak when tasks are completed
+                        streakCount++;
+                        document.getElementById('streak-count').textContent = streakCount;
+                    }
+                });
+            });
+        }
+
+        // Dark mode toggle
+        function setupDarkMode() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let isDark = localStorage.getItem('darkMode') === 'true' || prefersDark;
+
+            function applyTheme() {
+                if (isDark) {
+                    document.body.setAttribute('data-theme', 'dark');
+                    themeToggle.textContent = '☀️';
+                } else {
+                    document.body.removeAttribute('data-theme');
+                    themeToggle.textContent = '🌙';
+                }
+                localStorage.setItem('darkMode', isDark);
+            }
+
+            themeToggle.addEventListener('click', () => {
+                isDark = !isDark;
+                applyTheme();
+            });
+
+            applyTheme();
+        }
+
+        // Button listeners
+        function setupButtonListeners() {
+            // Add any additional button listeners here
+        }
+
+        // Menu setup
+        function setupMenu() {
+            // Add menu functionality if needed
+        }
+
+        // Progress system setup
+        function setupProgressSystem() {
+            // Initialize progress from localStorage
+            const savedSolved = localStorage.getItem('solvedCount');
+            const savedStreak = localStorage.getItem('streakCount');
+            
+            if (savedSolved) {
+                solvedCount = parseInt(savedSolved);
+                document.getElementById('solved-count').textContent = solvedCount;
+            }
+            
+            if (savedStreak) {
+                streakCount = parseInt(savedStreak);
+                document.getElementById('streak-count').textContent = streakCount;
+            }
+            
+            // Save progress periodically
+            setInterval(() => {
+                localStorage.setItem('solvedCount', solvedCount);
+                localStorage.setItem('streakCount', streakCount);
+            }, 5000);
+        }
+
+        // Issue listeners
+        function setupIssueListeners() {
+            // Add issue-specific listeners if needed
+        }
+
+        // Confetti celebration
+        function showConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const confettiPieces = [];
+            const colors = ['#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0'];
+
+            for (let i = 0; i < 150; i++) {
+                confettiPieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 10 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 3 + 2,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: Math.random() * 10 - 5
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                let activePieces = 0;
+                
+                confettiPieces.forEach(piece => {
+                    piece.y += piece.speed;
+                    piece.rotation += piece.rotationSpeed;
+                    
+                    if (piece.y < canvas.height) {
+                        activePieces++;
+                        
+                        ctx.save();
+                        ctx.translate(piece.x, piece.y);
+                        ctx.rotate(piece.rotation * Math.PI / 180);
+                        ctx.fillStyle = piece.color;
+                        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
+                        ctx.restore();
+                    }
+                });
+                
+                if (activePieces > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    canvas.style.display = 'none';
+                }
+            }
+
+            canvas.style.display = 'block';
+            animate();
+        }
+
+        // ===============================
+        // ENHANCED INITIALIZATION
+        // ===============================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test the improved AI (check console)
+            testImprovedAI();
+            
+            // Start embedded server
+            initializeMobileServer();
+            
+            // Detect mobile environment
+            detectMobileEnvironment();
+            
+            // Your existing initialization
+            updateLoadingStep();
+            setupButtonListeners();
+            setupMenu();
+            setupDarkMode();
+            setupQuickActions();
+            setupProgressSystem();
+            setupIssueListeners();
+            setupChecklist();
+            setupChat(); // Now uses embedded server
+            setupDetailedChecklist(); // NEW: Setup detailed checklist functionality
+            
+            console.log('🎯 MiniMind Fully Initialized');
+            console.log('🚀 Embedded Server: Running');
+            console.log('📊 Database: Integrated');
+            console.log('📱 Mobile Ready: Yes');
+            console.log('✅ Detailed Checklist: Active');
+        });
+
+        // ===============================
+        // CAPACITOR/CORDOVA INTEGRATION
+        // ===============================
+        
+        // For Capacitor (add to capacitor.config.json)
+        window.capacitorReady = function() {
+            console.log('⚡ Capacitor Platform Ready');
+            // Capacitor-specific optimizations
+            if (window.Capacitor && window.Capacitor.Plugins) {
+                // Use Capacitor storage instead of localStorage if available
+                window.capacitorStorage = window.Capacitor.Plugins.Storage;
+            }
+        };
+
+        // For Cordova
+        document.addEventListener('deviceready', function() {
+            console.log('📱 Cordova Device Ready');
+            // Cordova-specific initializations
+        }, false);
+    </script>
+</body>
+</html>
